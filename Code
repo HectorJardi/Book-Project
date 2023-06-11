@@ -1,0 +1,162 @@
+#Project made on Python3
+import pandas as pd
+
+# Read the book database from Excel
+df = pd.read_excel("BookDataBase.xlsx")
+
+# Define a function to generate a random book
+def generate_random_book():
+    random_row = df.sample(n=1)
+    return random_row
+
+# Create a new DataFrame for books read
+books_read = pd.DataFrame(columns=["Book Name", "Language", "Genre", "Pages"], dtype=int)
+
+# Track the total number of pages read in each genre
+total_pages_fiction = 0
+total_pages_non_fiction = 0
+
+# Track the total number of pages read in each language
+total_pages_spanish = 0
+total_pages_catalan = 0
+total_pages_english = 0
+
+# Main program loop
+while True:
+    command = input("Enter a command: ")
+    if command == "Read!":
+        read_status = "yes"
+        while read_status.lower() == "yes":
+            # Select the language with the minimum number of pages read
+            min_language_pages = min(total_pages_spanish, total_pages_catalan, total_pages_english)
+            if min_language_pages == total_pages_spanish:
+                language_with_fewer_pages = "Spanish"
+            elif min_language_pages == total_pages_catalan:
+                language_with_fewer_pages = "Catalan"
+            else:
+                language_with_fewer_pages = "English"
+
+            # Select the genre with the minimum number of pages read
+            min_genre_pages = min(total_pages_fiction, total_pages_non_fiction)
+            if min_genre_pages == total_pages_fiction:
+                genre_with_fewer_pages = "Fiction"
+            else:
+                genre_with_fewer_pages = "Non-Fiction"
+
+            book = df[(df["Genre"] == genre_with_fewer_pages) & (df["Language"] == language_with_fewer_pages)].sample(n=1)
+            print(book)
+
+            read_status = input("Did you read the book? (yes/no): ")
+            if read_status.lower() == "no":
+                pages = input("How many pages does the edition have?: ")
+                print("Let's read it! Adding to your database")
+                new_book = pd.DataFrame(
+                    {
+                        "Book Name": book["Book Name"].values[0],
+                        "Language": book["Language"].values[0],
+                        "Genre": book["Genre"].values[0],
+                        "Pages": int(pages),
+                    },
+                    index=[0],
+                )
+                books_read = pd.concat([books_read, new_book], ignore_index=True)
+
+                # Update the total number of pages read in the corresponding genre and language
+                if book["Genre"].values[0] == "Fiction":
+                    total_pages_fiction += int(pages)
+                else:
+                    total_pages_non_fiction += int(pages)
+
+                if book["Language"].values[0] == "Spanish":
+                    total_pages_spanish += int(pages)
+                elif book["Language"].values[0] == "Catalan":
+                    total_pages_catalan += int(pages)
+                else:
+                    total_pages_english += int(pages)
+
+            elif read_status.lower() == "yes":
+                pages_read = input("How many pages did you read?: ")
+                if pages_read.isdigit():
+                    pages_read = int(pages_read)
+                    if not books_read.empty:
+                        books_read.loc[books_read.index[-1], "Pages"] += pages_read
+                    else:
+                        print("No books read yet. Please read a book first.")
+                        continue  # Skip the rest of the loop
+
+                    print("Adding the pages read to your database.")
+
+                    # Deduct the pages read from the remaining pages in the book
+                    remaining_pages = int(df.loc[book.index[0], "Pages"]) - pages_read
+                    if remaining_pages < 0:
+                        remaining_pages = 0
+                    df.loc[book.index[0], "Pages"] = remaining_pages
+
+                    # Update the total number of pages read in the corresponding genre and language
+                    if book["Genre"].values[0] == "Fiction":
+                        total_pages_fiction += pages_read
+                    else:
+                        total_pages_non_fiction += pages_read
+
+                    if book["Language"].values[0] == "Spanish":
+                        total_pages_spanish += pages_read
+                    elif book["Language"].values[0] == "Catalan":
+                        total_pages_catalan += pages_read
+                    else:
+                        total_pages_english += pages_read
+
+                else:
+                    print("Invalid input. Please enter a valid number of pages.")
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
+
+            finish_status = input("Did you finish reading the book? (yes/no): ")
+            if finish_status.lower() == "yes":
+                print("Congratulations! You have finished reading the book.")
+            elif finish_status.lower() == "no":
+                pages_read = input("How many pages did you read?: ")
+                if pages_read.isdigit():
+                    pages_read = int(pages_read)
+                    if not books_read.empty:
+                        books_read.loc[books_read.index[-1], "Pages"] += pages_read
+                    else:
+                        print("No books read yet. Please read a book first.")
+                        continue  # Skip the rest of the loop
+
+                    print("Adding the pages read to your database.")
+
+                    # Deduct the pages read from the remaining pages in the book
+                    remaining_pages = int(df.loc[book.index[0], "Pages"]) - pages_read
+                    if remaining_pages < 0:
+                        remaining_pages = 0
+                    df.loc[book.index[0], "Pages"] = remaining_pages
+
+                    # Update the total number of pages read in the corresponding genre and language
+                    if book["Genre"].values[0] == "Fiction":
+                        total_pages_fiction += pages_read
+                    else:
+                        total_pages_non_fiction += pages_read
+
+                    if book["Language"].values[0] == "Spanish":
+                        total_pages_spanish += pages_read
+                    elif book["Language"].values[0] == "Catalan":
+                        total_pages_catalan += pages_read
+                    else:
+                        total_pages_english += pages_read
+
+                else:
+                    print("Invalid input. Please enter a valid number of pages.")
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
+
+    elif command == "Show Database":
+        print(df)
+
+    elif command == "Show Books Read":
+        print(books_read)
+
+    elif command == "Exit":
+        break
+
+# Save the updated book database to Excel
+df.to_excel("BookDataBase.xlsx", index=False)
